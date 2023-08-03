@@ -25,20 +25,6 @@ with request.urlopen('https://api.github.com/repos/spotDL/spotify-downloader/rel
 	content= loads(query.read().decode())
 EXE_URL= content[0]['assets'][3]['browser_download_url']
 
-def getSeconds(time):
-	try:
-		time= time.split(':')
-		time= [int(t) for t in time]
-	except ValueError:
-		# Translators: Texto del raise ValueError
-		raise ValueError('El formato de la cadena no es válido')
-	if len(time) == 2:
-		return time[0] * 60 + time[1]
-	elif len(time) == 3:
-		return time[0] * 3600 + time[1] * 60 + time[2]
-	else:
-		return None
-
 def disableInSecureMode(decoratedCls):
 	if globalVars.appArgs.secure:
 		return globalPluginHandler.GlobalPlugin
@@ -50,24 +36,14 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		super(GlobalPlugin, self).__init__()
 		self.percent= 0
 
-	def __call__(self, block_num, block_size, total_size):
-		readsofar= block_num * block_size
-		if total_size > 0:
-			percent= readsofar * 1e2 / total_size
-			percent_format= int(percent*1)
-			if percent_format <= (self.percent+10): return
-			self.percent= percent_format
-			# Translators: Palabra porciento posterior al número de porcentaje
-			message('{} porciento').format(percent_format)
-
 	def filesDownload(self):
 		connection_error= _('Error en la conexión. Por favor compruebe su conexión a internet y vuelva a intentarlo en unos minutos')
 		modal= wx.MessageDialog(None, _('Es necesario descargar el archivo ejecutable de spotify-downloader. ¿Quieres hacerlo ahora?'), _('Importante:'), wx.YES_NO | wx.YES_DEFAULT | wx.ICON_QUESTION)
 		if modal.ShowModal() == wx.ID_YES:
 			os.makedirs(os.path.join(MAIN_PATH, 'bin'))
-			request.urlretrieve(EXE_URL, os.path.join(MAIN_PATH, 'bin', 'spotdl.exe'), reporthook= self.__call__)
+			request.urlretrieve(EXE_URL, os.path.join(MAIN_PATH, 'bin', 'spotdl.exe'))
+			gui.messageBox('Ahora vamos a descargar el binario de ffmpeg, fundamental para el correcto funcionamiento del complemento', 'spotifyDL:', wx.OK)
 			subprocess.Popen('{} --download-ffmpeg'.format(SPOT_PATH), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, creationflags=subprocess.CREATE_NO_WINDOW)
-			gui.messageBox('🙌. Ejecutables descargados  correctamente', 'spotifyDL:', wx.OK)
 
 	@script(
 		category= 'spotifyDL',
